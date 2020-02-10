@@ -10,6 +10,15 @@ from app.forms import PostForm
 from app.models import Post
 from app.email import send_password_reset_email
 from app.forms import ResetPasswordForm
+from app.modify_doc import modify_doc
+
+from bokeh.embed import server_document
+
+from bokeh.server.server import Server
+from tornado.ioloop import IOLoop
+from threading import Thread
+
+
 
 
 @app.before_request
@@ -191,3 +200,23 @@ def reset_password(token):
         flash('Your password has been reset.')
         return redirect(url_for('login'))
     return render_template('reset_password.html', form=form)
+
+
+# associate certain URLs to the "index" function using decorators
+@app.route('/bokeh_test', methods=['GET'])
+# @login_required
+def bokeh_test():
+    script = server_document('http://localhost:5006/bkapp')
+    return render_template('bokeh_test.html', script=script, template="Flask")
+
+
+def bk_worker():
+    # Can't pass num_procs > 1 in this configuration. If you need to run multiple
+    # processes, see e.g. flask_gunicorn_embed.py
+    server = Server({'/bkapp': modify_doc}, io_loop=IOLoop(),
+                    allow_websocket_origin=["localhost:5000", "127.0.0.1:5000"])
+    server.start()
+    server.io_loop.start()
+
+
+Thread(target=bk_worker).start()
