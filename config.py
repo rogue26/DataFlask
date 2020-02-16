@@ -16,3 +16,4 @@ class Config(object):
     ADMINS = ['max.hill@pm.me']
     POSTS_PER_PAGE = 3
     LANGUAGES = ['en', 'es']
+    ANALYSES_FOLDER = "/home/max/PycharmProjects/dataflask_modules/"

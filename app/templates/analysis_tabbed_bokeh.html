@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import 'bootstrap/wtf.html' as wtf %}
+<!--{% block preamble %}-->
+<!--&lt;!&ndash;<link href="app/static/css/custom.min.css" rel="stylesheet">&ndash;&gt;-->
+<!--{% endblock %}-->
+{% macro embed(obj) -%}
+<div class="bk-root" id="{{ obj.elementid }}" {% if obj.id %} data-root-id="{{ obj.id }}" {% endif %}></div>
+{%- endmacro %}
+{% block app_content %}
+<head>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<!--<body>-->
+<!--  <div>-->
+<!--    This Bokeh app below served by a Bokeh server that has been embedded-->
+<!--    in another web app framework. For more information see the section-->
+<!--    <a  target="_blank" href="https://bokeh.pydata.org/en/latest/docs/user_guide/server.html#embedding-bokeh-server-as-a-library">Embedding Bokeh Server as a Library</a>-->
+<!--    in the User's Guide.-->
+<!--  </div>-->
+<!--  {{ script|safe }}-->
+<!--</body>-->
+<div class="container-fluid">
+    <div class="row">
+        {{ script | safe }}
+    </div>
+</div>
+
+{% endblock %}

@@ -1,25 +1,39 @@
+import sys
 from app import app, db
 from flask import render_template, flash, redirect, url_for, request
-from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm
 from flask_login import current_user, login_user, logout_user
-from app.models import User
 from flask_login import login_required
 from werkzeug.urls import url_parse
 from datetime import datetime
-from app.forms import PostForm
-from app.models import Post
-from app.email import send_password_reset_email
-from app.forms import ResetPasswordForm
-from app.modify_doc import modify_doc
-
-from bokeh.embed import server_document
+from yapsy.PluginManager import PluginManager
 
 from bokeh.server.server import Server
+from bokeh.client import pull_session
+from bokeh.embed import server_session
 from tornado.ioloop import IOLoop
 from threading import Thread
 
+from app.models import User, Post
+from app.forms import LoginForm, RegistrationForm, EditProfileForm, ResetPasswordRequestForm, PostForm, \
+    ResetPasswordForm
+from app.email import send_password_reset_email
+
+# Load yapsy plugins from the plugin directory specified in the ANALYSES_FOLDER configuration variable.
+plugin_manager = PluginManager()
+plugin_manager.setPluginPlaces([app.config['ANALYSES_FOLDER']])
+plugin_manager.collectPlugins()
+
+# Activate all loaded plugins
+for pluginInfo in plugin_manager.getAllPlugins():
+    plugin_manager.activatePluginByName(pluginInfo.name)
 
 
+# # Trigger 'some action' from the loaded plugins
+# for pluginInfo in plugin_manager.getAllPlugins():
+#     pluginInfo.plugin_object.print_name()
+
+# # note, here's how you can print the metadata
+# print(pluginInfo.name, pluginInfo.author, pluginInfo.version, pluginInfo.website, pluginInfo.description)
 
 @app.before_request
 def before_request():
@@ -202,21 +216,44 @@ def reset_password(token):
     return render_template('reset_password.html', form=form)
 
 
-# associate certain URLs to the "index" function using decorators
-@app.route('/bokeh_test', methods=['GET'])
-# @login_required
-def bokeh_test():
-    script = server_document('http://localhost:5006/bkapp')
-    return render_template('bokeh_test.html', script=script, template="Flask")
-
-
 def bk_worker():
     # Can't pass num_procs > 1 in this configuration. If you need to run multiple
     # processes, see e.g. flask_gunicorn_embed.py
-    server = Server({'/bkapp': modify_doc}, io_loop=IOLoop(),
-                    allow_websocket_origin=["localhost:5000", "127.0.0.1:5000"])
+
+    doc_function1 = plugin_manager.getPluginByName('smooth_ocean_temp').plugin_object.bkapp
+    doc_function2 = plugin_manager.getPluginByName('smooth_ocean_temp2').plugin_object.bkapp
+    docs = {"/analysis1": doc_function1, "/analysis2": doc_function2}
+    # doc = {'/bkapp': doc_function}
+    server = Server(docs, io_loop=IOLoop(), allow_websocket_origin=["localhost:5000", "127.0.0.1:5000"])
+
     server.start()
     server.io_loop.start()
+
+
+@app.route('/smooth_ocean_temp', methods=['GET'])
+def smooth_ocean_temp():
+    with pull_session(url="http://localhost:5006/analysis1") as session:
+        # update or customize that session
+        session.document.roots[0].children[1].title.text = "Special Sliders For A Specific User!"
+
+        # generate a script to load the customized session
+        script = server_session(session_id=session.id, url='http://localhost:5006/analysis1')
+
+        # use the script in the rendered page
+        return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
+
+
+@app.route('/smooth_ocean_temp2', methods=['GET'])
+def smooth_ocean_temp2():
+    with pull_session(url="http://localhost:5006/analysis2") as session:
+        # update or customize that session
+        session.document.roots[0].children[1].title.text = "Special Sliders For A Specific User!"
+
+        # generate a script to load the customized session
+        script = server_session(session_id=session.id, url='http://localhost:5006/analysis2')
+
+        # use the script in the rendered page
+        return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
 
 
 Thread(target=bk_worker).start()
