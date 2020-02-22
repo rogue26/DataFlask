@@ -222,8 +222,9 @@ def bk_worker():
 
     doc_function1 = plugin_manager.getPluginByName('smooth_ocean_temp').plugin_object.bkapp
     doc_function2 = plugin_manager.getPluginByName('smooth_ocean_temp2').plugin_object.bkapp
-    docs = {"/analysis1": doc_function1, "/analysis2": doc_function2}
-    # doc = {'/bkapp': doc_function}
+    doc_function3 = plugin_manager.getPluginByName('survey_analysis').plugin_object.bkapp
+    docs = {"/analysis1": doc_function1, "/analysis2": doc_function2, "/survey_analysis": doc_function3}
+
     server = Server(docs, io_loop=IOLoop(), allow_websocket_origin=["localhost:5000", "127.0.0.1:5000"])
 
     server.start()
@@ -243,14 +244,14 @@ def smooth_ocean_temp():
         return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
 
 
-@app.route('/smooth_ocean_temp2', methods=['GET'])
-def smooth_ocean_temp2():
-    with pull_session(url="http://localhost:5006/analysis2") as session:
-        # update or customize that session
-        session.document.roots[0].children[1].title.text = "Special Sliders For A Specific User!"
+@app.route('/survey_analysis', methods=['GET'])
+def survey_analysis():
+    with pull_session(url="http://localhost:5006/survey_analysis") as session:
+        # # update or customize that session
+        # session.document.roots[0].children[1].title.text = "Special Sliders For A Specific User!"
 
         # generate a script to load the customized session
-        script = server_session(session_id=session.id, url='http://localhost:5006/analysis2')
+        script = server_session(session_id=session.id, url='http://localhost:5006/survey_analysis')
 
         # use the script in the rendered page
         return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
