@@ -221,9 +221,8 @@ def bk_worker():
     # processes, see e.g. flask_gunicorn_embed.py
 
     doc_function1 = plugin_manager.getPluginByName('smooth_ocean_temp').plugin_object.bkapp
-    doc_function2 = plugin_manager.getPluginByName('smooth_ocean_temp2').plugin_object.bkapp
-    doc_function3 = plugin_manager.getPluginByName('survey_analysis').plugin_object.bkapp
-    docs = {"/analysis1": doc_function1, "/analysis2": doc_function2, "/survey_analysis": doc_function3}
+    doc_function2 = plugin_manager.getPluginByName('survey_analysis').plugin_object.bkapp
+    docs = {"/analysis1": doc_function1, "/survey_analysis": doc_function2}
 
     server = Server(docs, io_loop=IOLoop(), allow_websocket_origin=["localhost:5000", "127.0.0.1:5000"])
 
