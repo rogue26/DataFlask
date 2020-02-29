@@ -1,6 +1,6 @@
 import sys
 from app import app, db
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, g
 from flask_login import current_user, login_user, logout_user
 from flask_login import login_required
 from werkzeug.urls import url_parse
@@ -24,16 +24,22 @@ plugin_manager.setPluginPlaces([app.config['ANALYSES_FOLDER']])
 plugin_manager.collectPlugins()
 
 # Activate all loaded plugins
-for pluginInfo in plugin_manager.getAllPlugins():
+all_plugins = plugin_manager.getAllPlugins()
+for pluginInfo in all_plugins:
     plugin_manager.activatePluginByName(pluginInfo.name)
 
+print([_.name for _ in all_plugins])
+global_dict = {'analysis_names': [_.name for _ in all_plugins]}
 
-# # Trigger 'some action' from the loaded plugins
-# for pluginInfo in plugin_manager.getAllPlugins():
-#     pluginInfo.plugin_object.print_name()
 
 # # note, here's how you can print the metadata
 # print(pluginInfo.name, pluginInfo.author, pluginInfo.version, pluginInfo.website, pluginInfo.description)
+
+
+@app.context_processor
+def inject_dict_for_all_templates():
+    return {'analysis_names': [_.name for _ in all_plugins]}
+
 
 @app.before_request
 def before_request():
@@ -220,9 +226,11 @@ def bk_worker():
     # Can't pass num_procs > 1 in this configuration. If you need to run multiple
     # processes, see e.g. flask_gunicorn_embed.py
 
-    doc_function1 = plugin_manager.getPluginByName('smooth_ocean_temp').plugin_object.bkapp
-    doc_function2 = plugin_manager.getPluginByName('survey_analysis').plugin_object.bkapp
-    docs = {"/analysis1": doc_function1, "/survey_analysis": doc_function2}
+    doc_functions = plugin_manager.getAllPlugins()
+    doc_names = [_.name for _ in doc_functions]
+
+    # create dictionary of the form {"/analysis1": doc_function1, "/analysis2": doc_function2}
+    docs = {"/" + doc_names[j]: doc_functions[j].plugin_object.bkapp for j in range(len(doc_functions))}
 
     server = Server(docs, io_loop=IOLoop(), allow_websocket_origin=["localhost:5000", "127.0.0.1:5000"])
 
@@ -230,27 +238,15 @@ def bk_worker():
     server.io_loop.start()
 
 
-@app.route('/smooth_ocean_temp', methods=['GET'])
-def smooth_ocean_temp():
-    with pull_session(url="http://localhost:5006/analysis1") as session:
-        # update or customize that session
-        session.document.roots[0].children[1].title.text = "Special Sliders For A Specific User!"
-
-        # generate a script to load the customized session
-        script = server_session(session_id=session.id, url='http://localhost:5006/analysis1')
-
-        # use the script in the rendered page
-        return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
-
-
-@app.route('/survey_analysis', methods=['GET'])
-def survey_analysis():
-    with pull_session(url="http://localhost:5006/survey_analysis") as session:
+@app.route('/<analysis_name>', methods=['GET'])
+def bokeh_plugin(analysis_name):
+    session_url = "http://localhost:5006/" + analysis_name
+    with pull_session(url=session_url) as session:
         # # update or customize that session
         # session.document.roots[0].children[1].title.text = "Special Sliders For A Specific User!"
 
         # generate a script to load the customized session
-        script = server_session(session_id=session.id, url='http://localhost:5006/survey_analysis')
+        script = server_session(session_id=session.id, url=session_url)
 
         # use the script in the rendered page
         return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
