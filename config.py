@@ -13,7 +13,7 @@ class Config(object):
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') is not None
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    ADMINS = ['max.hill@pm.me']
+    ADMINS = ['user@test.net']
     POSTS_PER_PAGE = 3
     LANGUAGES = ['en', 'es']
-    ANALYSES_FOLDER = "/home/max/PycharmProjects/dataflask_modules/"
+    ANALYSES_FOLDER = r"C:\Users\6008\PycharmProjects\dataflask_modules"
