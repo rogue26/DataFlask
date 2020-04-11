@@ -241,15 +241,20 @@ def bk_worker():
 @app.route('/<analysis_name>', methods=['GET'])
 def bokeh_plugin(analysis_name):
     session_url = "http://localhost:5006/" + analysis_name
-    with pull_session(url=session_url) as session:
-        # # update or customize that session
-        # session.document.roots[0].children[1].title.text = "Special Sliders For A Specific User!"
+    # generate a script to load the customized session
+    script = server_session(session_id='test_session_id', url=session_url)
 
-        # generate a script to load the customized session
-        script = server_session(session_id=session.id, url=session_url)
-
-        # use the script in the rendered page
-        return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
+    # use the script in the rendered page
+    return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
+    # with pull_session(url=session_url) as session:
+    #     # # update or customize that session
+    #     # session.document.roots[0].children[1].title.text = "Special Sliders For A Specific User!"
+    #
+    #     # generate a script to load the customized session
+    #     script = server_session(session_id=session.id, url=session_url)
+    #
+    #     # use the script in the rendered page
+    #     # return render_template("analysis_tabbed_bokeh.html", script=script, template="Flask")
 
 
 Thread(target=bk_worker).start()
